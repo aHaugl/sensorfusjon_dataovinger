@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 
-# matplotlib.use('Qt5')
+matplotlib.use('Qt5Cairo')
 
 # to see your plot config
 print(f'matplotlib backend: {matplotlib.get_backend()}')
