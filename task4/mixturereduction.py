@@ -18,5 +18,4 @@ def gaussian_mixture_moments(
     Pext = np.average(xdiff[:, :, None] * xdiff[:, None, :], axis=0, weights=w)
     # # total
     Pbar = Pint + Pext
-
     return xbar, Pbar
