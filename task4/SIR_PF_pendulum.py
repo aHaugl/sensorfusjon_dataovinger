@@ -12,15 +12,19 @@ K = round(20 / Ts)
 
 # constants
 g = 9.81
-l = 1
+l = 0.8
 a = g / l
 d = 0.5  # dampening
 S = 5
 
 # disturbance PDF
-process_noise_sampler = lambda: rng.uniform(-S, S)
+
+
+def process_noise_sampler(): return rng.uniform(-S, S)
 
 # dynamic function
+
+
 def modulo2pi(x, idx=0):
     xmod = x
     xmod[idx] = (xmod[idx] + np.pi) % (2 * np.pi) - np.pi  # wrap to [-pi, pi]
@@ -34,7 +38,7 @@ def pendulum_dynamics(x, a, d=0):  # continuous dynamics
 
 def pendulum_dynamics_discrete(xk, vk, Ts, a, d=0):
     xkp1 = modulo2pi(xk + Ts * pendulum_dynamics(xk, a, d))  # euler discretize
-    xkp1[1] += Ts * vk  #  zero orde hold noise
+    xkp1[1] += Ts * vk  # zero orde hold noise
     return xkp1
 
 
@@ -60,13 +64,18 @@ axs1[1].set_ylabel(r"$\dot \theta$")
 
 # constants
 Ld = 4
-Ll = 0
+Ll = 0.1
 r = 0.25
 
 # noise pdf
-measurement_noise_sampler = lambda: rng.triangular(-r, 0, r)
+
+
+def measurement_noise_sampler():
+    return rng.triangular(-r, 0, r)
 
 # measurement function
+
+
 def h(x, Ld, l, Ll):  # measurement function
     lcth = l * np.cos(x[0])
     lsth = l * np.sin(x[0])
@@ -89,16 +98,14 @@ ax2.set_ylabel("z")
 # %% Task: Estimate using a particle filter
 
 # number of particles to use
-N = # TODO
+N = 300  # TODO
 
 # initialize particles, pretend you do not know where the pendulum starts
-px = np.array([
-    rng. # TODO,
-    rng. # TODO
-    ]).T
+px = np.array([rng.uniform(-np.pi, np.pi, N), rng.normal(0, np.pi / 4, N)]).T
+
 
 # initial weights
-w = # TODO
+w = np.ones(N) / N
 
 # allocate some space for resampling particles
 pxn = np.zeros_like(px)
@@ -108,11 +115,12 @@ PF_dynamic_distribution = scipy.stats.uniform(loc=-S, scale=2 * S)
 PF_measurement_distribution = scipy.stats.triang(c=0.5, loc=-r, scale=2 * r)
 
 # initialize a figure for particle animation.
-plt.ion()
+# plt.ion()
 fig4, ax4 = plt.subplots(num=4, clear=True)
 plotpause = 0.01
 
-sch_particles = ax4.scatter(np.nan, np.nan, marker=".", c="b", label=r"$\hat \theta^n$")
+sch_particles = ax4.scatter(
+    np.nan, np.nan, marker=".", c="b", label=r"$\hat \theta^n$")
 sch_true = ax4.scatter(np.nan, np.nan, c="r", marker="x", label=r"$\theta$")
 ax4.set_ylim((-1.5 * l, 1.5 * l))
 ax4.set_xlim((-1.5 * l, 1.5 * l))
@@ -123,31 +131,32 @@ ax4.legend()
 
 eps = np.finfo(float).eps
 for k in range(K):
-    print(f"k = {k}")
+    # print(f"k = { k} ")
     # weight update
     for n in range(N):
-        w[n] =  # TODO, hint: PF_measurement_distribution.pdf
-    w = # TODO: normalize
-
+        w[n] = PF_measurement_distribution.pdf(Z[k] - h(px[n], Ld, l, Ll))
+    w = w / w.sum()
     # resample
-    # TODO: some pre calculations?
+    cumw = np.cumsum(w)
     i = 0
     for n in range(N):
-        # find a particle 'i' to pick
-        # algorithm in the book, but there are other options as well
+        u = (n + 1) / N - 10 * eps  # remove some eps for convergence
+        while u > cumw[i]:
+            i += 1
         pxn[n] = px[i]
 
     # trajecory sample prediction
     for n in range(n):
-        vkn = # TODO: process noise, hint: PF_dynamic_distribution.rvs
-        px[n] = # TODO: particle prediction
+        vkn = PF_dynamic_distribution.rvs()
+        px[n] = pendulum_dynamics_discrete(pxn[n], vkn, Ts, a, d)
 
     # plot
-    sch_particles.set_offsets(np.c_[l * np.sin(pxn[:, 0]), -l * np.cos(pxn[:, 0])])
+    sch_particles.set_offsets(
+        np.c_[l * np.sin(pxn[:, 0]), -l * np.cos(pxn[:, 0])])
     sch_true.set_offsets(np.c_[l * np.sin(x[k, 0]), -l * np.cos(x[k, 0])])
 
     fig4.canvas.draw_idle()
-    plt.show(block=False)
+    plt.pause(0.01)
     plt.waitforbuttonpress(plotpause)
 
 plt.waitforbuttonpress()

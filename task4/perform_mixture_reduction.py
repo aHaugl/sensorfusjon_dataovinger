@@ -8,7 +8,7 @@ matplotlib.use('Qt5Cairo')
 
 # %% setup and show initial
 # TODO: fill in values
-mus = np.array([1, 2, 3]).reshape(3, 1)
+mus = np.array([0, 2, 3]).reshape(3, 1)
 sigmas = np.array([1, 1, 2]).reshape(
     3, 1, 1
 )  # note std and not var as in gaussian_mixture_moments
@@ -20,9 +20,10 @@ totMean, totSigma2 = (
     elem.squeeze() for elem in gaussian_mixture_moments(w, mus, sigmas ** 2)
 )
 plotNsigmas = 3
-x = totMean + plotNsigmas * np.sqrt(totSigma2) * np.arange(-1, 1 + 1e-10, 5e-2)
+x = totMean + plotNsigmas * np.sqrt(totSigma2) * np.arange(-1, 1 + 1e-10, 5e-3)
 
-fig1, ax1 = plt.subplots(num=1, clear=True)
+fig, ax = plt.subplots(1, 2, clear=True)
+ax1, ax2 = ax
 pdf_comp_vals = np.array(
     [
         multivariate_normal.pdf(
@@ -37,7 +38,6 @@ for i in range(len(mus)):
 ax1.legend()
 
 # %% merge and show combinations
-fi2, ax2 = plt.subplots(num=2, clear=True)
 ax2.plot(x, pdf_mix_vals, label="original")
 k = 0
 wcomb = np.zeros_like(w)
